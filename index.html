@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Durood Shareef Counter</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      color: #fff;
+      text-align: center;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 25px;
+      max-width: 450px;
+      width: 100%;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      animation: fadeIn 1s ease;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      font-family: 'Scheherazade New', serif;
+      line-height: 1.9;
+    }
+
+    .counter {
+      font-size: 18px;
+      margin: 8px 0;
+    }
+
+    /* Tasbeeh beads bar */
+    .beads-container {
+      display: grid;
+      grid-template-columns: repeat(20, 1fr); /* 20 x 5 rows = 100 beads */
+      gap: 4px;
+      margin: 15px auto;
+      max-width: 420px;
+    }
+
+    .bead {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      transition: 0.3s;
+    }
+
+    .bead.active {
+      background: #4facfe;
+      box-shadow: 0 0 6px #00f2fe;
+      transform: scale(1.1);
+    }
+
+    .beads-container.complete .bead {
+      animation: pulse 0.6s ease;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); background: #00f2fe; }
+      100% { transform: scale(1); }
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 15px 0;
+    }
+
+    .buttons button, .undo-btn, .toggle-btn, .target-btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .buttons button:hover, .undo-btn:hover, .toggle-btn:hover, .target-btn:hover {
+      background: rgba(255,255,255,0.25);
+      transform: scale(1.05);
+    }
+
+    .undo-btn {
+      margin-top: 8px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    #calendarSection {
+      display: none;
+      margin-top: 15px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .day {
+      background: rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 6px;
+      min-height: 55px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .day.has-count {
+      background: rgba(0,255,100,0.3);
+      box-shadow: 0 0 6px rgba(0,255,100,0.4);
+    }
+
+    footer {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.8;
+      text-align: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="glass">
+    <h1>
+      اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ<br>
+      كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ<Br>
+      اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ<br>
+      كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ
+    </h1>
+
+    <div class="counter">Total: <span id="totalCount">0</span></div>
+    <div class="counter">Today: <span id="todayCount">0</span></div>
+    <div class="counter">Target: <span id="targetCount">1000</span></div>
+
+    <!-- Tasbeeh beads -->
+    <div class="beads-container" id="beadsContainer"></div>
+
+    <button class="target-btn" onclick="setTarget()">🎯 Set Target</button>
+
+    <div class="buttons">
+      <button onclick="addCount(100)">+100</button>
+      <button onclick="addCount(500)">+500</button>
+      <button onclick="addCount(1000)">+1000</button>
+    </div>
+
+    <button class="undo-btn" onclick="undoLast()">↩️ Undo Last</button>
+    <button class="toggle-btn" onclick="toggleCalendar()">📅 Show/Hide Calendar</button>
+
+    <div id="calendarSection">
+      <h2 id="monthYear"></h2>
+      <div class="calendar" id="calendar"></div>
+    </div>
+  </div>
+
+  <footer>Made by Faiz with Love ❤️</footer>
+
+  <script>
+    let totalCount = parseInt(localStorage.getItem('totalCount')) || 0;
+    let targetCount = parseInt(localStorage.getItem('targetCount')) || 1000;
+    let history = JSON.parse(localStorage.getItem('history')) || {};
+    let lastAdded = 0;
+
+    const totalCountEl = document.getElementById('totalCount');
+    const todayCountEl = document.getElementById('todayCount');
+    const targetCountEl = document.getElementById('targetCount');
+    const calendarEl = document.getElementById('calendar');
+    const monthYearEl = document.getElementById('monthYear');
+    const beadsContainer = document.getElementById('beadsContainer');
+
+    // make 100 beads
+    for (let i = 0; i < 100; i++) {
+      const bead = document.createElement('div');
+      bead.classList.add('bead');
+      beadsContainer.appendChild(bead);
+    }
+    const beads = document.querySelectorAll('.bead');
+
+    function getTodayKey() {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    }
+
+    function render() {
+      totalCountEl.textContent = totalCount;
+      targetCountEl.textContent = targetCount;
+      const todayKey = getTodayKey();
+      let todayCount = history[todayKey] || 0;
+      todayCountEl.textContent = todayCount;
+
+      // update beads
+      beads.forEach((b, i) => {
+        if (i < (todayCount % 100)) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+
+      // full 100 complete pulse animation
+      if (todayCount > 0 && todayCount % 100 === 0) {
+        beadsContainer.classList.add('complete');
+        setTimeout(() => beadsContainer.classList.remove('complete'), 600);
+      }
+
+      renderCalendar();
+    }
+
+    function addCount(num) {
+      totalCount += num;
+      lastAdded = num;
+      const todayKey = getTodayKey();
+      if (!history[todayKey]) history[todayKey] = 0;
+      history[todayKey] += num;
+      save();
+      render();
+    }
+
+    function undoLast() {
+      if (lastAdded > 0) {
+        totalCount -= lastAdded;
+        const todayKey = getTodayKey();
+        if (history[todayKey]) {
+          history[todayKey] -= lastAdded;
+          if (history[todayKey] < 0) history[todayKey] = 0;
+        }
+        lastAdded = 0;
+        save();
+        render();
+      } else {
+        alert("No recent addition to undo!");
+      }
+    }
+
+    function setTarget() {
+      let newTarget = prompt("Enter new target:", targetCount);
+      if (newTarget && !isNaN(newTarget)) {
+        targetCount = parseInt(newTarget);
+        save();
+        render();
+      }
+    }
+
+    function save() {
+      localStorage.setItem('totalCount', totalCount);
+      localStorage.setItem('targetCount', targetCount);
+      localStorage.setItem('history', JSON.stringify(history));
+    }
+
+    function renderCalendar() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+
+      monthYearEl.textContent = now.toLocaleString('default', { month: 'long' }) + " " + year;
+      calendarEl.innerHTML = "";
+
+      for (let i=0; i<firstDay; i++) {
+        const empty = document.createElement('div');
+        calendarEl.appendChild(empty);
+      }
+
+      for (let day=1; day<=daysInMonth; day++) {
+        const dateKey = year + "-" + String(month+1).padStart(2,'0') + "-" + String(day).padStart(2,'0');
+        const div = document.createElement('div');
+        div.className = "day";
+        div.innerHTML = "<strong>"+day+"</strong><br>"+(history[dateKey]||0);
+        if (history[dateKey]) div.classList.add('has-count');
+        calendarEl.appendChild(div);
+      }
+    }
+
+    function toggleCalendar() {
+      const cal = document.getElementById("calendarSection");
+      cal.style.display = (cal.style.display === "none" || cal.style.display === "") ? "block" : "none";
+    }
+
+    render();
+  </script>
+</body>
+</html>
+
